@@ -1,0 +1,524 @@
+<html>
+	<head>
+		<title>videoView</title>
+		<meta charset="utf-8"/>
+		<meta http-equiv="Content-Type" content="text/html; charset=gb2312"/>
+		<link rel="stylesheet" type="text/css" href="css/easyui.css"/>
+		<link rel="stylesheet" type="text/css" href="css/jquery-ui.css"/>
+		<script src="js/jquery-2.2.2.js"></script>
+		<script src="js/jquery-ui.js"></script>
+		<script type="text/javascript">
+			/**
+			 * 初始化
+			 */
+			 var isBrowser;
+			 var personInfo = {};
+			$(function(){
+				//按钮样式
+			    $("#takePhoto").button()
+			      .click(function( event ) {
+			        event.preventDefault();
+			      });
+				//判断浏览器
+				isBrowser = doVerificationBrowser();
+				//根据浏览器不同使用不同方法调用摄像头
+				if(isBrowser){
+					$("#FalshDiv").show();
+				}else{
+					//判断浏览器是否 支持HTML5
+					if(checkHtml5()){
+						$("#HTML5Div").show();
+						doHtml5();
+					}
+				}
+			});
+			/**
+			 * 检查摄像头是否存在
+			 */
+			function checkCamera(){
+			}
+			/**
+			 * 检测浏览器是否兼容HTML5
+			 */
+			function checkHtml5() {
+				 return !!document.createElement("video").canPlayType;
+			}
+			/**
+			 *  判断浏览器是否为IE或者其他浏览器
+			 */
+			function doVerificationBrowser(){
+				var userAgent = navigator.userAgent; //取得浏览器的userAgent字符串
+				//判断浏览是否为IE
+				 if (!!window.ActiveXObject || "ActiveXObject" in window || userAgent.indexOf("trident")>-1) {
+					 return true;
+				 } else{
+					 return false;
+				 }
+			}
+			/**
+			 * 使用HTML5调用摄像头拍摄照片(适用于非IE浏览器)
+			 */
+			var canvas,context,video,videoObj,errBack;
+			function doHtml5(){
+				//Put event listeners into place
+				window.addEventListener("DOMContentLoaded", function() {
+					// Grab elements, create settings, etc.
+					    canvas = document.getElementById("canvas"),
+						context = canvas.getContext("2d"),
+						video = document.getElementById("video"),
+						videoObj = { "video": true },
+						errBack = function(error) {
+							console.log("Video capture error: ", error.code); 
+						};
+					// Put video listeners into place
+					if(navigator.getUserMedia) { // Standard
+						navigator.getUserMedia(videoObj, function(stream) {
+							video.src = stream;
+							video.play();
+						}, errBack);
+					} else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
+						navigator.webkitGetUserMedia(videoObj, function(stream){
+							video.src = window.webkitURL.createObjectURL(stream);
+							video.play();
+						}, errBack);
+					}
+					else if(navigator.mozGetUserMedia) { // Firefox-prefixed
+						navigator.mozGetUserMedia(videoObj, function(stream){
+							video.src = window.URL.createObjectURL(stream);
+							video.play();
+						}, errBack);
+					}
+				}, false); 
+			}
+			/**
+			 * 拍照
+			 */
+			function photo(){
+				//IE
+				if(isBrowser){
+					doFlash();
+				}else{
+					//非IE
+					tabkePhotoForHtml5();
+				}
+			}
+			/**
+			 * 使用FLASH调用摄像头拍照(适用于IE浏览器)
+			 */
+			function doFlash(){
+				var MyCan= thisMovie("My_Cam");
+				var base64Data = MyCan.GetBase64Code();
+				personInfo.data = base64Data;
+				 $.post('/',personInfo,function(data){
+				 	
+				 });
+			}
+			/**
+			 * 获取Flash对象 
+			 */
+			function thisMovie(movieName) {
+			    if (navigator.appName.indexOf("Microsoft") != -1) {
+			        return document[movieName];
+			    }
+			    else {
+			        return document[movieName];
+			    }
+			}
+			/**
+			 * 拍摄照片(非IE)
+			 */
+			function tabkePhotoForHtml5(){
+				//拍照画在画布上
+				context.drawImage(video,0,0,500,400);
+				var canvas = document.getElementById("canvas"); 
+				//从画布上获取照片数据
+				var imgData = canvas.toDataURL();
+				//将图片转换为Base64
+				var base64Data = imgData.substr(22);
+				var data={"base64Face":base64Data,"phone":getQueryString("phone")};
+			  //执行确定操作
+				$.restPost({
+					 type:'post',
+					 dataType: 'json',
+					 url:'../rest/realNameAuth/checkFace',
+					 data:data,
+					 success:function(data){
+						 if(true==data){
+							 	$.messager.alert('提示信息','操作成功,转至登录页面!');
+				    			window.location.href="../../view/login.html";
+				    		}	
+					 }
+				});
+			}
+			/**
+			 * 获取url请求参数
+			 */
+			function getQueryString(name) {
+			    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+			    var r = window.location.search.substr(1).match(reg);
+			    if (r != null) return unescape(r[2]); return null;
+			}
+			
+			
+			
+		//	aaa.visible=false;
+			//判断阈值
+			function threshold(){
+				var yuzhi = $('#yuzhi').val();
+				if(yuzhi==''||yuzhi>1||yuzhi<0){
+					alert('请输入阈值（0<阈值<1）');
+				}else{
+					showvalue();
+				}
+			}
+		
+			function showvalue()
+			{
+			
+				i=0;
+				flag=0;
+				
+				if(aaa.OpenComm(1001)==1)
+				{
+					flag=1;
+					//alert(i);
+					
+				}
+				else
+				{
+					for(i=1;i<3;i++)
+					{
+						if(aaa.OpenComm(i)==1)
+						{
+							flag=1;
+							//alert(i);
+							break;
+						}
+						if(flag!=1)
+						{
+							alert("打开端口失败");		
+							
+						}
+					}								
+				}			
+					
+				if(flag==1){
+					if (aaa.Authen()==1)
+					{
+						ret=aaa.ReadCardPath("c:\\",1);
+					if(ret==1||ret==3)
+					{
+						
+						myform.name.value=aaa.sName;
+						myform.sex.value=aaa.sSex;
+						myform.national.value=aaa.sNation;
+						myform.birthday.value=aaa.sBornDate;			
+						myform.address.value=aaa.sAddress;
+						myform.id.value=aaa.sIDNo;
+						myform.qfjg.value=aaa.sSignGov;
+						myform.yxqstart.value=aaa.sStartDate;
+						myform.yxqend.value=aaa.sEndDate;
+						aaa.ReadCard(3)
+						myform.newaddress.value=aaa.sNewAddress;
+						myform.Base64.value=aaa.PhotoBuffer;
+						myform.fp.value=aaa.sFpState;
+						//调用拍照函数
+						
+						var name = $('input[name="name"]').val();
+						var sex = $('input[name="sex"]').val();
+						var national = $('input[name="national"]').val();
+						var id = $('input[name="id"]').val();
+						var Base64 = $('input[name="Base64"]').val();
+						personInfo.name = name;
+						personInfo.sex = sex;
+						personInfo.national = national;
+						personInfo.id = id;
+						personInfo.Base64 = Base64;
+
+						photo();
+					}
+					else
+					{
+						alert("读卡错误！"+aaa.ReadCardPath("",1));
+					}
+					}
+					else{
+					alert("找卡错误,请重新放卡!");
+					}
+				}
+				aaa.EndComm();	
+				return personInfo;
+			}
+			
+			</script>
+		<style>
+			body{
+				margin: 0px;
+				padding: 0px;
+				background: #eee;
+			}
+			.header{
+				width: 100%;
+				height: 50px;
+				background: deepskyblue;
+			}
+			.yuzhi{
+				position: absolute;
+				right: 50px;
+				top: 10px;
+				height: 26px;
+				padding: 3px;
+				border: 1px solid #ccc;
+				border-radius: 3px;
+			}
+			.cameras{
+				position: absolute;
+				top: 100px;
+				left: 50px;
+				border: 1px solid #000;
+				margin: -1px;
+				width: 40%;
+				padding: 3px;
+			}
+			.tables{
+				position: absolute;
+				top: 100px;				
+				right: 50px;
+				width: 40%;
+				
+			}	
+			.centerBtn{
+				position: absolute;
+				top: 100px;				
+				left: 40%;
+				width: 20%;
+			}
+			form tr{
+				height: 50px;
+				line-height: 50px;
+			}
+			form input{
+				margin: 0px 15px;
+				height: 24px;
+				padding: 3px 7px;
+				width: 90% ;
+				border: 1px solid #ccc;
+				border-radius: 3px;
+			
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">		
+			<input type="text" class="yuzhi" id="yuzhi" placeholder="输入阈值"/> 
+		</div>
+	<div class="cameras">
+				<!-- FLASH调用 -->
+		<div id="FalshDiv"  style="text-align:center;display:none;border: 1px solid #000;">
+			<object style="z-index: 100" id="My_Cam" align="middle" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
+		                codebase="http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0"
+		                height="400" viewastext="在线拍照" width="600">
+		                <param name="allowScriptAccess" value="sameDomain" />
+		                <param name="movie" value="../js/MyCamera.swf" />
+		                <param name="quality" value="high" />
+		                <param name="bgcolor" value="#ffffff" />
+		                <param name="wmode" value="transparent" />
+		                <embed style="z-index: 100" align="middle" allowscriptaccess="sameDomain" bgcolor="#ffffff" height="400"
+		                    name="My_Cam" pluginspage="http://www.macromedia.com/go/getflashplayer" quality="high"  wmode="transparent"
+		                    src="js/MyCamera.swf" type="application/x-shockwave-flash" width="600"></embed>
+		   	</object>
+		</div>
+		<!-- HTML5调用 -->
+		<div id="HTML5Div" style="text-align:center;display:none;">
+			<video id="video" width="600" height="400" autoplay ></video>
+			<canvas id="canvas" width="600" height="400" style="display:none;"></canvas>
+		</div>
+		<!-- 执行按钮 -->
+		<!--<div align="center" id="secondPageBT">
+			<input id="takePhoto" type="button" value="拍照" onclick="photo()">
+		</div>-->
+	</div>
+	<div class="centerBtn">
+		<!--<div align="center" id="secondPageBT" style="margin-bottom: 20px;">
+			<input id="takePhoto" type="button" value="拍照" onclick="photo()">
+		</div>	-->
+		
+		
+		<div align="center" >
+			<input type="button" style="padding:3px 7px; height: 34px; border: 1px solid #ccc; border-radius: 5px; cursor: pointer;" value="读取二代证卡" onclick="threshold();">			
+		</div>
+	</div>
+	<div class="tables">		
+		<table border="1" class="tableOne"><tr>
+		<td>
+	<table class="tableThree"><tr><td valign="top">	
+		
+		<OBJECT classid="clsid:18EE8930-6993-4ADA-B8BB-02BA5820AC94" id="aaa" CODEBASE="Termb.cab#version=2,1,2,0"  VIEWASTEXT></OBJECT>
+		<script language="javascript">
+			/*var personInfo = {};
+			
+		//	aaa.visible=false;
+			//判断阈值
+			function threshold(){
+				var yuzhi = $('#yuzhi').val();
+				if(yuzhi==''||yuzhi>1||yuzhi<0){
+					alert('请输入阈值（0<阈值<1）');
+				}else{
+					showvalue();
+				}
+			}
+		
+			function showvalue()
+			{
+			
+				i=0;
+				flag=0;
+				
+				if(aaa.OpenComm(1001)==1)
+				{
+					flag=1;
+					//alert(i);
+					
+				}
+				else
+				{
+					for(i=1;i<3;i++)
+					{
+						if(aaa.OpenComm(i)==1)
+						{
+							flag=1;
+							//alert(i);
+							break;
+						}
+						if(flag!=1)
+						{
+							alert("打开端口失败");		
+							
+						}
+					}								
+				}			
+					
+				if(flag==1){
+					if (aaa.Authen()==1)
+					{
+						ret=aaa.ReadCardPath("c:\\",1);
+					if(ret==1||ret==3)
+					{
+						
+						myform.name.value=aaa.sName;
+						myform.sex.value=aaa.sSex;
+						myform.national.value=aaa.sNation;
+						myform.birthday.value=aaa.sBornDate;			
+						myform.address.value=aaa.sAddress;
+						myform.id.value=aaa.sIDNo;
+						myform.qfjg.value=aaa.sSignGov;
+						myform.yxqstart.value=aaa.sStartDate;
+						myform.yxqend.value=aaa.sEndDate;
+						aaa.ReadCard(3)
+						myform.newaddress.value=aaa.sNewAddress;
+						myform.Base64.value=aaa.PhotoBuffer;
+						myform.fp.value=aaa.sFpState;
+						//调用拍照函数
+						
+						var name = $('input[name="name"]').val();
+						var sex = $('input[name="sex"]').val();
+						var national = $('input[name="national"]').val();
+						var id = $('input[name="id"]').val();
+						var Base64 = $('input[name="Base64"]').val();
+						personInfo.name = name;
+						personInfo.sex = sex;
+						personInfo.national = national;
+						personInfo.id = id;
+						personInfo.Base64 = Base64;
+
+						photo();
+					}
+					else
+					{
+						alert("读卡错误！"+aaa.ReadCardPath("",1));
+					}
+					}
+					else{
+					alert("找卡错误,请重新放卡!");
+					}
+				}
+				aaa.EndComm();	
+				return personInfo;
+			}*/
+		</script>
+	</td></tr></table>	
+	
+	</td>	
+		
+		<td>	
+		<form name="myform">
+		<table width="100%"  border="0" cellpadding="0" cellspacing="1" bgcolor="#D9D4B6" class="tableTwo">
+	  
+	   <!-- <TR>
+	      <TD  colspan="2"   align="center" valign="bottom" bgColor=#f7f2ff>
+	      		<input type="button" value="读取二代证卡" onclick="showvalue();"></a>
+	    </TR>-->
+	    <TR>
+	      <TD colspan="2" align="center" valign="bottom" bgColor=#f7f2ff>个人基本信息</TD>
+	    </TR>
+	    <TR>
+	      <TD  bgColor=#f7f2ff align="right" style="width:25%">姓名：</TD>
+	      <TD align="left" bgColor=#f7f2ff><input size="30" name="name" ></TD>      
+	    </TR>
+	    <TR>
+	      <TD  bgColor=#f7f2ff align="right" style="width:25%">性别：</TD>
+	      <TD align="left" bgColor=#f7f2ff><INPUT size="2"  name="sex"></TD>
+	      
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">民族：</TD>
+	      <TD align="left" bgColor=#f7f2ff><INPUT size="4" name="national" ></TD>
+	     
+	    </TR>
+	    <TR>
+	
+	      <TD bgColor=#f7f2ff align="right">出生日期：</TD>
+	      <TD bgColor=#f7f2ff><INPUT size="16" name="birthday" type=""></TD>
+	     
+	    </TR>
+	    <TR>
+	
+	      <TD bgColor=#f7f2ff align="right">住址：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="70" name="address" type=""></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">公民身份号码：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="36" name="id"  type=""></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">签发机关：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="30" name="qfjg" type="" ></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">有效期起始日期：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="16" name="yxqstart" type=""></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">有效期截止日期：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="16" name="yxqend" type=""></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">最新住址：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="70" name="newaddress" type=""></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">照片：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="70" name="Base64"  type=""></TD>
+	    </TR>
+	    <TR>
+	      <TD bgColor=#f7f2ff align="right">是否含指纹信息：</TD>
+	      <TD  bgColor=#f7f2ff><INPUT size="70" name="fp" type=""></TD>
+	    </TR>
+	</table>
+	</form>
+	</td></tr></table>
+	</div>	
+	
+<br>	
+	</body>
+</html>
